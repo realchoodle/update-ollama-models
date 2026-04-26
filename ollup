@@ -11,7 +11,9 @@ update_models() {
 
     echo -e "Updating Ollama models...\n"
     for model in "${models[@]}"; do
+        echo "Updating model $model..."
         ollama pull "$model"
+        echo 
     done
     echo -e "\nFinished updating models."
 
