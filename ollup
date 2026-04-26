@@ -4,25 +4,38 @@
 ollama list > /dev/null 2>&1
 ollama_status="$?"
 
+ollup_prompt="OLLUP:"
 
 update_models() {
-    local models
-    readarray < <(ollama ls | awk 'NR >= 2 {print $1}') models
+    local pull_status
+    local -a models failed_updates 
+    readarray -t models < <(ollama ls | awk 'NR >= 2 && NF {print $1}')
 
-    echo -e "Updating Ollama models...\n"
+    echo "$ollup_prompt Updating Ollama models..."
     for model in "${models[@]}"; do
-        echo "Updating model $model..."
+        echo "$ollup_prompt Updating model $model..."
         ollama pull "$model"
-        echo 
+        pull_status="$?"
+        if (( pull_status == 0 )); then
+            echo
+        else
+            failed_updates+=("$model")
+        fi
     done
-    echo -e "\nFinished updating models."
 
+    echo "$ollup_prompt Finished updating models."
+    if (( ${#failed_updates[@]} > 0 )); then
+        echo "$ollup_prompt The following models failed to update:" >&2
+        for failure in "${failed_updates[@]}"; do
+            printf "%s %s\n" "$ollup_prompt" "$failure" >&2
+        done
+    fi
     return 0
 }
 
 if (( ollama_status == 0 )); then
     update_models
 else
-    echo "Ollama is not running. No models were updated." 2>&1
+    echo "$ollup_prompt Ollama is not running. No models were updated." >&2
     exit 1
 fi
