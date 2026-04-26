@@ -4,9 +4,10 @@
 ollama list > /dev/null 2>&1
 ollama_status="$?"
 
+
 update_models() {
     local models
-    models=($(ollama ls | awk 'NR >= 2 {print $1}'))
+    readarray < <(ollama ls | awk 'NR >= 2 {print $1}') models
 
     echo -e "Updating Ollama models...\n"
     for model in "${models[@]}"; do
@@ -17,8 +18,9 @@ update_models() {
     return 0
 }
 
-if (( $ollama_status == 0 )); then
+if (( ollama_status == 0 )); then
     update_models
 else
     echo "Ollama is not running. No models were updated." 2>&1
+    exit 1
 fi
