@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+# Ollama list returns 1 if there is no server
+ollama list > /dev/null 2>&1
+ollama_status="$?"
+
+update_models() {
+    local models
+    models=($(ollama ls | awk 'NR >= 2 {print $1}'))
+
+    echo -e "Updating Ollama models...\n"
+    for model in "${models[@]}"; do
+        ollama pull "$model"
+    done
+    echo -e "\nFinished updating models."
+
+    return 0
+}
+
+if (( $ollama_status == 0 )); then
+    update_models
+else
+    echo "Ollama is not running. No models were updated." 2>&1
+fi
