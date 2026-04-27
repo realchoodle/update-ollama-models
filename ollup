@@ -1,26 +1,15 @@
 #!/usr/bin/env bash
 
-# Ollama list returns 1 if there is no server
-ollama list > /dev/null 2>&1
-ollama_status="$?"
-
 ollup_prompt="OLLUP:"
 
 update_models() {
-    local pull_status
     local -a models failed_updates 
     readarray -t models < <(ollama ls | awk 'NR >= 2 && NF {print $1}')
 
     echo "$ollup_prompt Updating Ollama models..."
     for model in "${models[@]}"; do
         echo "$ollup_prompt Updating model $model..."
-        ollama pull "$model"
-        pull_status="$?"
-        if (( pull_status == 0 )); then
-            echo
-        else
-            failed_updates+=("$model")
-        fi
+        ollama pull "$model" || failed_updates+=("$model")
     done
 
     echo "$ollup_prompt Finished updating models."
@@ -33,9 +22,10 @@ update_models() {
     return 0
 }
 
-if (( ollama_status == 0 )); then
-    update_models
-else
-    echo "$ollup_prompt Ollama is not running. No models were updated." >&2
+# If there is no server, then ollama list returns 1.
+if ! ollama list > /dev/null 2>&1; then
+    echo "$ollup_prompt Ollama is not running; no models were updated." >&2
     exit 1
 fi
+
+update_models
